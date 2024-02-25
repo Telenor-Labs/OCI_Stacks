@@ -1,0 +1,1229 @@
+## Copyright © 2021, Oracle and/or its affiliates. 
+## All rights reserved. The Universal Permissive License (UPL), Version 1.0 as shown at http://oss.oracle.com/licenses/upl
+
+    title: "Deploy Enterprise 5G on OCI"
+    stackDescription: "Deploy Enterprise 5G on OCI"
+    schemaVersion: 1.1.0
+    version: "20190404"
+    locale: "en"
+
+    variableGroups:
+    - title: General Configuration
+      visible: false
+      variables:
+      - ${tenancy_ocid}
+      - ${user_ocid}
+      - ${availablity_domain_name}
+
+    - title: Enterprise 5G
+      visible: true  
+      variables:
+      - ${compartment_ocid}
+      - local_upf
+      - upf_count
+      - deploy_infra
+      - show_advanced
+      
+
+    - title: Advanced details for Enterprise Mobile Core (Primary)
+      visible: 
+          and:
+           - show_advanced
+      variables:
+      - VCN-CIDR-Main
+      - Druid_Public-CIDR-Main
+      - RAN_N2_N3-CIDR-Main
+      - WAN_N6-CIDR-Main
+      - N4-CIDR-Main
+      - NMS_IP
+      - Image_5g
+      - Shape
+      - Routing_type_5g
+      - NMS_IDENTITY_5g
+
+    - title: VCN Information for Secondary Site 1
+      visible: 
+          and:
+             - and:
+                 - show_advanced
+             - gt:
+                 - upf_count
+                 - 0 
+      variables:
+      - ${compartment_ocid}
+      - VCN-CIDR-Secondary
+      - Druid_Public-CIDR-Secondary
+      - RAN_N3-CIDR-Secondary
+      - WAN_N6-CIDR-Secondary
+      - N4-CIDR-Secondary
+      - UPF_SELECTION_DNN1
+      - Image_upf1
+      - Routing_type_upf1
+      - NMS_IDENTITY_upf1
+
+    - title: VCN Information for Secondary Site 2
+      visible: 
+           and:
+             - and:
+                 - show_advanced
+             - gt:
+                 - upf_count
+                 - 1
+      variables:
+      - ${region_upf2}
+      - ${compartment_ocid}
+      - VCN-CIDR-Secondary
+      - UPF_SELECTION_DNN2
+      - Image_upf2
+      - Shape
+      - Routing_type_upf2
+      - NMS_IDENTITY_upf2
+
+    - title: Subnet details for Secondary Site 1
+      visible: 
+           and:
+             - and:
+                 - show_advanced
+             - gt:
+                 - upf_count
+                 - 0
+      variables:
+      - Druid_Public-CIDR-Secondary
+      - RAN_N3-CIDR-Secondary
+      - WAN_N6-CIDR-Secondary
+      - N4-CIDR-Secondary
+
+    - title: Subnet details for Secondary Site 2
+      visible: 
+           and:
+             - and:
+                 - show_advanced
+             - gt:
+                 - upf_count
+                 - 1
+      variables:
+      - Druid_Public-CIDR-Secondary
+      - RAN_N3-CIDR-Secondary
+      - WAN_N6-CIDR-Secondary
+      - N4-CIDR-Secondary
+
+    - title: Required Configuration 
+      visible: false  
+      variables:
+      - NMS_IP
+      
+    
+    - title: Enterprise Mobile Core (Primary)
+      visible: 
+        eq:
+          - deploy_infra
+          - "Public Cloud"         
+      variables:
+      - region_5g
+      - Type_of_mobilecore    
+      - No-of-Active-sessions
+      - Total_throughput
+      - MNC
+      - MCC     
+      - raemis_oam
+   
+      
+     
+
+    - title: Secondary Site 1
+      visible: 
+          and:
+             - eq:
+                 - deploy_infra
+                 - "Public Cloud"  
+             - gt:
+                 - upf_count
+                 - 0
+             - and:
+                 - local_upf
+      variables:
+      - region_upf1
+      - Type_of_edge1
+      - Total_throughput_upf1
+      
+      
+
+    - title: Secondary Site 2
+      visible: 
+           and:
+             - eq:
+                 - deploy_infra
+                 - "Public Cloud"  
+             - gt:
+                 - upf_count
+                 - 1
+      variables:
+      - region_upf2
+      - Type_of_edge2   
+      - Total_throughput_upf2
+      
+      
+
+    - title: Secondary Site 3
+      visible: 
+           and:
+             - eq:
+                 - deploy_infra
+                 - "Public Cloud"  
+             - gt:
+                 - upf_count
+                 - 2
+      variables:
+      - region_upf3
+      - Type_of_edge3
+      - Total_throughput_upf3
+
+
+    - title: Add Ons
+      visible: true
+      variables:
+      - VoNR
+      - No-of-Concurrent-VoLTE-VoNR-calls 
+      - testing
+      - failover
+      - ad-fd
+      - autoscaling
+      - cpu-or-mem
+
+    - title: Enterprise Applications
+      visible: 
+      variables:
+      - app1
+      - app2
+      - app3
+      - site1
+      - site2
+      
+    variables:
+      
+      app1:
+        type: boolean
+        visible: true
+        required: false
+        title: "Real Time Streaming"
+        default: false
+
+      app2:
+        type: boolean
+        visible: true
+        required: false
+        title: "Mission Critical Services"
+        default: false
+
+      app3:
+        type: boolean
+        visible: true
+        required: false
+        title: "3D Holography"
+        default: false
+
+      
+      site1:
+        type: enum
+        visible: 
+            eq:
+              - deploy_infra
+              - "Public Cloud"
+        required: false
+        title: "Site"
+        enum:
+          - "Main site"
+          - "Secondary Site"
+
+      site2:
+        type: enum
+        visible: 
+            not:
+              - eq:
+                 - deploy_infra
+                 - "Public Cloud"
+        required: false
+        title: "Site"
+        enum:
+          - "Compute Cloud@Customer"
+          - "Roving edge infrastructure"
+     
+
+      deploy_infra:
+        type: enum
+        visible: 
+           and:
+            - and:
+               - local_upf
+            - gt:
+                - upf_count
+                - 0
+              
+        required: false
+        title: "Deployment infrastructure"
+        default: "Public Cloud"
+        enum:
+          - "Public Cloud"
+          - "Compute Cloud@Customer"
+          - "Roving edge infrastructure"
+
+      show_advanced:
+        type: boolean
+        title: "Show advanced options?"
+        description: "Shows Subnet details for Enterprise Mobile Core"
+        visible: true
+        default: false
+
+      show_advanced1:
+        type: boolean
+        title: "Show advanced options?"
+        description: "Shows Subnet details for Secondary Site 1"
+        visible: false
+        default: false
+
+      show_advanced2:
+        type: boolean
+        title: "Show advanced options?"
+        description: "Shows Subnet details for Secondary Site 2"
+        visible: false
+        default: false
+
+      local_upf:
+        type: boolean
+        title: "Multi-Region Deployment"
+        description: "Click for yes"
+        visible: true
+        default: false
+
+      upf_count:
+        type: number
+        title: "Count of Secondary Site(s)"
+        minimum: 0
+        maximum: 3
+        description: "Select No.of Site(s) "
+        visible: 
+          and:
+            - local_upf
+        default: 0
+
+      VCN-CIDR-Main:
+        type: string
+        visible: true
+        required: false
+        title: "VCN CIDR"
+        description: "Choose VCN CIDR"
+        default: "192.168.11.0/24"
+
+      Druid_Public-CIDR-Main:
+        type: string
+        visible: true
+        required: false
+        title: "Public CIDR Block"
+        description: "Choose VCN CIDR"
+        default: "192.168.11.0/26"
+
+      RAN_N2_N3-CIDR-Main:
+        type: string
+        visible: true
+        required: false
+        title: "RAN N2 N3 CIDR Block"
+        description: "Choose VCN CIDR"
+        default: "192.168.11.64/26"
+
+      WAN_N6-CIDR-Main:
+        type: string
+        visible: true
+        required: false
+        title: "WAN N6 CIDR Block"
+        description: "Choose VCN CIDR"
+        default: "192.168.11.128/26"
+
+      N4-CIDR-Main:
+        type: string
+        visible: true
+        required: false
+        title: "N4 CIDR Block"
+        description: "Choose VCN CIDR"
+        default: "192.168.11.192/26"
+
+      VCN-CIDR-Secondary:
+        type: string
+        visible: true
+        required: false
+        title: "VCN CIDR"
+        description: "Choose VCN CIDR"
+        default: "192.168.10.0/24"
+
+      Druid_Public-CIDR-Secondary:
+        type: string
+        visible: true
+        required: false
+        title: "Public CIDR Block"
+        description: "Choose VCN CIDR"
+        default: "192.168.10.0/26"
+
+      RAN_N3-CIDR-Secondary:
+        type: string
+        visible: true
+        required: false
+        title: "RAN N2 N3 CIDR Block"
+        description: "Choose VCN CIDR"
+        default: "192.168.10.64/26"
+
+      WAN_N6-CIDR-Secondary:
+        type: string
+        visible: true
+        required: false
+        title: "WAN N6 CIDR Block"
+        description: "Choose VCN CIDR"
+        default: "192.168.10.128/26"
+
+      N4-CIDR-Secondary:
+        type: string
+        visible: true
+        required: false
+        title: "N4 CIDR Block"
+        description: "Choose VCN CIDR"
+        default: "192.168.10.192/26"
+      
+      #5G CORE
+      region_5g:
+        type: oci:identity:region:name
+        visible: true
+        required: true
+        title: "Region for Mobile Core"
+        description: "Choose Regions to deploy the cluster1"
+        default: "uk-london-1"
+
+      Type_of_mobilecore:
+        type: enum
+        visible: true
+        required: false
+        title: "Type of Mobile Core"
+        default: "5G Core"
+        description: ""
+        enum:
+          - "5G Core"
+          - "4G Core"
+          - "IOT Core"
+          - "MOCN GW"
+        
+       
+      Image_5g:
+        type: string
+        required: false
+        visible: true
+        title: "Image for Mobile Core"
+        description: "Choose Image for compute instances"
+        default: "ocid1.image.oc1.uk-london-1.aaaaaaaa5ntcdcwerbkj3khprgrvp3h6cs332bj54lkqogfxtchkvpybnata"
+
+
+      Shape:
+        type: oci:core:instanceshape:name
+        required: false
+        visible: true
+        title: "Shape for VM"
+        description: "Choose shape for compute instances"
+        default: "VM.Standard.E4.Flex"
+        dependsOn:
+          compartmentId: ${compartment_ocid}
+ 
+
+      VCN_5g:
+        type: string
+        required: false
+        visible: false
+        title: "VCN"
+        description: "Choose VCN for compute instances"
+
+      Public-Subnet_5g:
+        type: string
+        required: false
+        visible: false
+        title: "Public-Subnet"
+        description: "Choose Subnet for N2"
+
+
+      Subnet-N2_N3_5g:
+        type: string
+        required: false
+        visible: false
+        title: "Subnet for N2_N3"
+        description: "Choose Subnet for N2_N3"
+
+
+      Subnet-N6_5g:
+        type: string
+        required: false
+        visible: false
+        title: "Subnet for N6"
+        description: "Choose Subnet for N6"
+
+      Subnet-N4_5g:
+        type: string
+        required: false
+        visible: false
+        title: "Subnet for N4"
+        description: "Choose Subnet for N4"
+
+
+      NMS_IDENTITY_5g:
+        type: string
+        visible: true
+        required: false
+        title: "ID for DNM"
+        description: "Unique Identifier for DNM"
+        default: "50dd7036-7791-4db3-9c15-d8d525e1ff56"
+
+
+      SOLUTION_TYPE_5g:
+        type: string
+        visible: false
+        required: false
+        title: "SOLUTION_TYPE"
+        description: "The Raemis solution type e.g. pcn"
+        default: "pcn"
+      
+      compartment_ocid:
+        type: oci:identity:compartment:id
+        required: true
+        visibile: false
+        title: Compartment
+        description: "Compartment where you want to create the solution resources"
+
+      availablity_domain_name:
+        type: string
+        required: true
+        visibile: false
+        title: "Availability Domain to be chosen"
+        description: "Availability Domain to be chosen"
+
+      region_upf1:
+        type: oci:identity:region:name
+        visible: 
+            gt:
+             - upf_count
+             - 0
+        required: true
+        title: "Region for Site 1"
+        description: "Choose Regions to deploy Sites(s)"
+        default: "uk-cardiff-1"
+
+      region_upf2:
+        type: oci:identity:region:name
+        visible: 
+            gt:
+             - upf_count
+             - 1
+        required: true
+        title: "Region for Site 2"
+        description: "Choose Regions to deploy Sites(s)"
+        default: ""
+
+      region_upf3:
+        type: oci:identity:region:name
+        visible: 
+            gt:
+             - upf_count
+             - 2
+        required: true
+        title: "Region for Site 3"
+        description: "Choose Regions to deploy Sites(s)"
+        default: ""
+       
+      Image_upf1:
+        type: string
+        required: false
+        visible: true
+        title: "Images for Compute Instance"
+        description: "Choose Image for compute instances"
+        default: "ocid1.image.oc1.uk-cardiff-1.aaaaaaaaiywzsrkotyahydnqjdvudhc4okzjpfm6nqbto7mtdxlfypjhfnfa"
+
+      Image_upf2:
+        type: string
+        required: false
+        visible: true
+        title: "Images for Compute Instance"
+        description: "Choose Image for compute instances"
+        default: ""
+
+      Image_upf3:
+        type: string
+        required: false
+        visible: false
+        title: "Images for Compute Instance"
+        description: "Choose Image for compute instances"
+        default: ""
+
+
+      VCN_upf1:
+        type: string
+        required: false
+        visible: false
+        title: "VCN"
+        description: "Choose VCN for compute instances"
+
+      VCN_upf2:
+        type: string
+        required: false
+        visible: false
+        title: "VCN"
+        description: "Choose VCN for compute instances"
+
+      VCN_upf3:
+        type: string
+        required: false
+        visible: false
+        title: "VCN"
+        description: "Choose VCN for compute instances"
+
+
+      Public-Subnet_upf1:
+        type: string
+        required: false
+        visible: false
+        title: "Public-Subnet"
+        description: "Choose Subnet for O&M"
+
+      Public-Subnet_upf2:
+        type: string
+        required: false
+        visible: false
+        title: "Public-Subnet"
+        description: "Choose Subnet for O&M"
+
+      Public-Subnet_upf3:
+        type: string
+        required: false
+        visible: false
+        title: "Public-Subnet"
+        description: "Choose Subnet for O&M"
+
+
+      Subnet-N3_upf1:
+        type: string
+        required: false
+        visible: false
+        title: "Subnet for N3"
+        description: "Choose Subnet for N3"
+
+      Subnet-N3_upf2:
+        type: string
+        required: false
+        visible: false
+        title: "Subnet for N3"
+        description: "Choose Subnet for N3"
+
+      Subnet-N3_upf3:
+        type: string
+        required: false
+        visible: false
+        title: "Subnet for N3"
+        description: "Choose Subnet for N3"
+
+
+      Subnet-N6_upf1:
+        type: string
+        required: false
+        visible: false
+        title: "Subnet for N6"
+        description: "Choose Subnet for N6"
+
+      Subnet-N6_upf2:
+        type: string
+        required: false
+        visible: false
+        title: "Subnet for N6"
+        description: "Choose Subnet for N6"
+
+      Subnet-N6_upf3:
+        type: string
+        required: false
+        visible: false
+        title: "Subnet for N6"
+        description: "Choose Subnet for N6"
+
+
+      Subnet-N4_upf1:
+        type: string
+        required: false
+        visible: false
+        title: "Subnet for N4"
+        description: "Choose Subnet for N4"
+
+      Subnet-N4_upf2:
+        type: string
+        required: false
+        visible: false
+        title: "Subnet for N4"
+        description: "Choose Subnet for N4"
+
+      Subnet-N4_upf3:
+        type: string
+        required: false
+        visible: false
+        title: "Subnet for N4"
+        description: "Choose Subnet for N4"
+
+
+      No-of-Active-sessions:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 100000
+        default: 20000
+        title: "Number of Active Sessions"
+        description: "Number of simultaneously attached users"
+        visible: true
+
+      No-of-Concurrent-VoLTE-VoNR-calls:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 1000
+        default: 40
+        title: "No of Concurrent VoLTE-VoNR calls"
+        description: "No of Concurrent VoLTE-VoNR calls"
+        visible: 
+          and:
+           - VoNR
+       
+
+      Total_throughput:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 100000
+        default: 2
+        title: "Total throughput in Gbps"
+        description: "Total throughput in Gbps"
+        visible: true
+        
+      raemis_oam:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 100000
+        default: 2
+        title: "raemis_oam"
+        description: "raemis_oam"
+        visible: false
+
+      config_ocpus:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 1
+        title: "Flex Shape OCPUs for VM"
+        description: "Choose number of OCPUs for Flex Shape."
+        visible: false
+
+      memory_in_gbs:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 4
+        title: "Flex Shape Memory (GB) for VM"
+        description: "Choose number GB for Flex Shape Memory."
+        visible: false
+
+      SST:
+        type: string
+        visible: false
+        required: false
+        title: "Slice Service Type"
+        description: "Provide SST details"
+        default: ""
+      SD:
+        type: string
+        visible: false
+        required: false
+        title: "Slice Differentiator"
+        description: "Provide SD details"
+        default: ""
+
+      MCC:
+        type: string
+        visible: true
+        required: false
+        title: "Mobile Country Code (MCC)"
+        description: "Provide PLMN MCC"
+        default: "101"
+
+      MNC:
+        type: string
+        visible: true
+        required: false
+        title: "Mobile Network Code (MNC)"
+        description: "Provide PLMN MNC"
+        default: "10"
+
+      RAN_CP:
+        type: string
+        visible: false
+        required: false
+        title: "RAN_CP"
+        default: "ens5"
+
+      RAN_DP:
+        type: string
+        visible: false
+        required: false
+        title: "RAN_DP"
+        default: "ens5"
+
+      WAN:
+        type: string
+        visible: false
+        required: false
+        title: "WAN"
+        default: "ens6"
+
+      WEB_TOKEN_IDENTITY:
+        type: string
+        visible: false
+        required: false
+        title: "WEB_TOKEN_IDENTITY"
+        default: "1"
+
+      NMS_IDENTITY_upf1:
+        type: list
+        visible: true
+        required: false
+        title: "ID for DNM"
+        description: "Unique Identifier for DNM"
+        default: "658a431b-019d-4169-8fc9-dd4590904abb"
+
+      NMS_IDENTITY_upf2:
+        type: list
+        visible: true
+        required: false
+        title: "ID for DNM"
+        description: "Unique Identifier for DNM"
+        default: "11031d0f-6ed4-4c67-911b-0fe1ecb7fddd"
+
+      NMS_IDENTITY_upf3:
+        type: list
+        visible: false
+        required: false
+        title: "ID for DNM"
+        description: "Unique Identifier for DNM"
+        default: "11031d0f-6ed4-4c67-911b-0fe1ecb7fddd"
+
+      NMS_IP:
+        type: string
+        visible: true
+        required: false
+        title: "Distributed Network manager (DNM) IP"
+        default: "129.151.192.161"
+
+      SOLUTION_TYPE_upf1:
+        type: string
+        visible: false
+        required: false
+        title: "SOLUTION_TYPE"
+        description: "The Raemis solution type e.g. upf"
+        default: "upf"
+
+      SOLUTION_TYPE_upf2:
+        type: string
+        visible: false
+        required: false
+        title: "SOLUTION_TYPE"
+        description: "The Raemis solution type e.g. upf"
+        default: "upf"
+
+      SOLUTION_TYPE_upf3:
+        type: string
+        visible: false
+        required: false
+        title: "SOLUTION_TYPE"
+        description: "The Raemis solution type e.g. upf"
+        default: "upf"
+
+      SMF_IP1:
+        type: string
+        visible: false
+        required: false
+        title: "SMF_IP"
+        description: "The IP address of the SMF we want this UPF to connect to"
+        default: "192.168.11.196"
+
+      SMF_IP2:
+        type: string
+        visible: false
+        required: false
+        title: "SMF_IP"
+        description: "The IP address of the SMF we want this UPF to connect to"
+        default: "192.168.11.196"
+
+      SMF_IP3:
+        type: string
+        visible: false
+        required: false
+        title: "SMF_IP"
+        description: "The IP address of the SMF we want this UPF to connect to"
+        default: "192.168.11.196"
+
+      SMF_API_USERNAME1:
+        type: string
+        visible: false
+        required: false
+        title: "SMF_API_USERNAME"
+        description: "The Raemis API username of the SMF"
+        default: "raemis"
+
+      SMF_API_USERNAME2:
+        type: string
+        visible: false
+        required: false
+        title: "SMF_API_USERNAME"
+        description: "The Raemis API username of the SMF"
+        default: "raemis"
+
+      SMF_API_USERNAME3:
+        type: string
+        visible: false
+        required: false
+        title: "SMF_API_USERNAME"
+        description: "The Raemis API username of the SMF"
+        default: "raemis"
+
+      SMF_API_PASSWORD1:
+        type: string
+        visible: false
+        required: false
+        title: "SMF_API_PASSWORD"
+        description: "The Raemis API password of the SMF"
+        default: "password"
+
+      SMF_API_PASSWORD2:
+        type: string
+        visible: false
+        required: false
+        title: "SMF_API_PASSWORD"
+        description: "The Raemis API password of the SMF"
+        default: "password"
+
+      SMF_API_PASSWORD3:
+        type: string
+        visible: false
+        required: false
+        title: "SMF_API_PASSWORD"
+        description: "The Raemis API password of the SMF"
+        default: "password"
+
+      N4:
+        type: string
+        visible: false
+        required: false
+        title: "N4"
+        description: "The network interface that will be used by the UPF to reach the SMF on the N4 link"
+        default: "ens7"
+
+      UPF_SELECTION_DNN1:
+        type: string
+        visible: true
+        required: false
+        title: "APN/DNN for site"
+        description: "For Edge selection"
+        default: "Cardiff"
+
+      UPF_SELECTION_DNN2:
+        type: string
+        visible: false
+        required: false
+        title: "APN/DNN for site"
+        description: ""
+        default: "Cardiff"
+
+      UPF_SELECTION_DNN3:
+        type: string
+        visible: false
+        required: false
+        title: "APN/DNN for site"
+        description: ""
+        default: "Cardiff"
+
+      Routing_type_5g:
+        type: enum
+        visible: true
+        required: false
+        title: "Type of Routing"
+        default: "OS Routing"
+        description: ""
+        enum:
+          - "OS Routing"
+          - "Raemis Routing"
+
+      Routing_type_upf1:
+        type: enum
+        visible: true
+        required: false
+        title: "Type of Routing"
+        default: "OS Routing"
+        description: ""
+        enum:
+          - "OS Routing"
+          - "Raemis Routing" 
+
+      Routing_type_upf2:
+        type: enum
+        visible: true
+        required: false
+        title: "Type of Routing"
+        default: ""
+        description: ""
+        enum:
+          - "OS Routing"
+          - "Raemis Routing"
+
+      Routing_type_upf3:
+        type: enum
+        visible: false
+        required: false
+        title: "Type of Routing"
+        default: ""
+        description: ""
+        enum:
+          - "OS Routing"
+          - "Raemis Routing"
+
+      Type_of_edge1:
+        type: enum
+        visible: true
+        required: false
+        title: "Type of Site"
+        default: "UPF only"
+        description: ""
+        enum:
+          - "UPF only"
+          - "Autonomous Site" 
+          - "4G Core"
+          - "IOT Core"
+
+      Type_of_edge2:
+        type: enum
+        visible: true
+        required: false
+        title: "Type of Site"
+        default: "UPF only"
+        description: ""
+        enum:
+          - "UPF only"
+          - "Autonomous Site"
+          - "4G Core"
+          - "IOT Core"
+
+      Type_of_edge3:
+        type: enum
+        visible: true
+        required: false
+        title: "Type of site"
+        default: "UPF only"
+        description: ""
+        enum:
+          - "UPF only"
+          - "Autonomous site"
+          - "4G Core"
+          - "IOT Core"
+
+      #Edge_selection_criteria:
+      #  type: enum
+      #  visible: false
+      #  required: false
+      #  title: "Edge selection criteria"
+      #  default: ""
+      #  description: "Edge selection criteria"
+      #  enum:
+      #    - "APN/DNN based"
+      #    - "TAC based"
+      #    - "Slice based"  
+
+      #TAC:
+      #  type: string
+      #  visible:
+      #       eq:
+      #        - Edge_selection_criteria
+      #        - "TAC based"
+      #  required: false
+      #  title: "TAC for  Edge site"
+      #  description: ""
+      #  default: ""          
+
+      Total_throughput_upf1:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 100000
+        default: 2
+        title: "Total throughput in Gbps"
+        description: "Total throughput in Gbps"
+        visible: true 
+
+      Total_throughput_upf2:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 100000
+        default: 2
+        title: "Total throughput in Gbps"
+        description: "Total throughput in Gbps"
+        visible: true
+
+      Total_throughput_upf3:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 100000
+        default: 2
+        title: "Total throughput in Gbps"
+        description: "Total throughput in Gbps"
+        visible: true  
+
+
+      #UE
+      #UE
+      testing:
+        type: boolean
+        title: "BuiltInTesting"
+        description: "Create simulated gNB and UE and run a ping test"
+        visible: true
+        default: true
+
+      Image_ue:
+        type: string
+        required: false
+        visible: false
+        title: "Image for UERANSim"
+        description: "Choose Image for UERANSim"
+        default: "ocid1.image.oc1.uk-cardiff-1.aaaaaaaaprzq5lsdagpogvehhuh5havc3eczecnqiccetsqxbksok23pakma"
+
+
+      Shape_ue:
+        type: oci:core:instanceshape:name
+        required: false
+        visible: false
+        title: "Shape for UERANSim"
+        description: "Choose shape for UERANSim"
+        default: "VM.Standard.E4.Flex"
+        dependsOn:
+          compartmentId: ${compartment_ocid}
+
+      config_ocpus_ue:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 1
+        title: "Flex Shape OCPUs for VM"
+        description: "Choose number of OCPUs for Flex Shape."
+        visible: false
+
+      memory_in_gbs_ue:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 2
+        title: "Flex Shape Memory (GB) for VM"
+        description: "Choose number GB for Flex Shape Memory."
+        visible: false
+
+      Image-test:
+        type: oci:core:image:id
+        required: false
+        visible: false
+        title: "Image for Test VM"
+        description: "Choose Image for Test VM"
+        default: "ocid1.image.oc1.uk-cardiff-1.aaaaaaaahdomtfesmtvkfk664mulzcvrpxuirj7txfvolc4lucj6u6te2ycq"
+        dependsOn:
+          compartmentId: ${compartment_ocid}
+
+      Shape-test:
+        type: oci:core:instanceshape:name
+        required: false
+        visible: false
+        title: "Shape for Test VM"
+        description: "Choose shape for Test VM"
+        default: "VM.Standard.A1.Flex"
+        dependsOn:
+          compartmentId: ${compartment_ocid}
+
+      config_ocpus-test:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 1
+        title: "Flex Shape OCPUs for VM"
+        description: "Choose number of OCPUs for Flex Shape."
+        visible: false
+
+      memory_in_gbs-test:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 2
+        title: "Flex Shape Memory (GB) for VM"
+        description: "Choose number GB for Flex Shape Memory."
+        visible: false
+
+      VoNR:
+        type: boolean
+        title: "VoNR"
+        visible: true
+        default: true
+
+      failover:
+        type: boolean
+        title: "Failover"
+        visible: true
+        default: false
+
+      ad-fd:
+        type: enum
+        visible: 
+          and:
+           - failover
+        required: false
+        title: "AD or FD"
+        description: ""
+        enum:
+          - "AD"
+          - "FD"
+
+      autoscaling:
+        type: boolean
+        title: "Autoscaling"
+        visible: true
+        default: false
+
+      cpu-or-mem:
+        type: enum
+        visible: 
+          and:
+           - autoscaling
+        required: false
+        title: "Select criteria for Autoscaling"
+        description: ""
+        enum:
+          - "CPU based"
+          - "Memory based"      
+          
+      
+      
+
+     
+
+
+      
