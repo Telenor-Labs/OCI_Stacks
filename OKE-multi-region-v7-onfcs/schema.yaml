@@ -1,0 +1,922 @@
+## Copyright © 2021, Oracle and/or its affiliates. 
+## All rights reserved. The Universal Permissive License (UPL), Version 1.0 as shown at http://oss.oracle.com/licenses/upl
+
+    title: "Create Kubernetes Engine Cluster"
+    stackDescription: "Deploy Kubernetes Engine Cluster (OKE)"
+    schemaVersion: 1.1.0
+    version: "20190404"
+    locale: "en"
+
+    variableGroups:
+    - title: General Configuration
+      visible: false
+      variables:
+      - ${tenancy_ocid}
+      - ${release}
+      - campaign
+      - instance_os
+      - ${linux_os_version}
+      - ${user_ocid}
+      - ${availablity_domain_name}
+
+    - title: Required Configuration 
+      visible: true  
+      variables:
+      - ${compartment_ocid}
+      - show_advanced
+
+    - title: OKE Cluster Information 
+      visible: true  
+      variables:
+      - ${Cluster-number}
+      
+
+    - title: Kubernetes Clusters Configuration
+      visible: 
+          and:
+            - show_advanced
+      variables:
+      - ${VCN-CIDR}
+      - ${K8SLBSubnet-CIDR}
+      - ${K8SAPIEndPointSubnet-CIDR}
+      - ${K8SNodePoolSubnet-CIDR}
+      - ${cluster_options_kubernetes_network_config_pods_cidr}
+      - ${cluster_options_kubernetes_network_config_services_cidr}
+      - ${cluster_kube_config_token_version}
+
+    
+    - title: Cluster 1 Configuration
+      visible:  
+           gt:
+            - ${Cluster-number}
+            - 0  
+      variables:
+      - ${ClusterName_1}
+      - ${cluster_type1}
+      - ${cni_type1}
+      - ${node_pool_quantity_Cluster1}
+      - ${region_1}
+         
+
+    - title: Nodepool details for Cluster1
+      visible:
+          and:
+             - gt:
+                 - ${node_pool_quantity_Cluster1}
+                 - 1
+             - gt:
+                 - ${Cluster-number}
+                 - 0
+      variables:
+      - ${kubernetes_version_Cluster1_pool1}
+      - ${Shape_1_pool1}
+      - ${node_pool1_size_Cluster1}
+      - ${Flex_shape_memory_Cluster1_pool1}
+      - ${Flex_shape_ocpus_Cluster1_pool1}
+      - ${kubernetes_version_Cluster1_pool2}
+      - ${Shape_1_pool2} 
+      - ${node_pool2_size_Cluster1}
+      - ${Flex_shape_memory_Cluster1_pool2}
+      - ${Flex_shape_ocpus_Cluster1_pool2}
+
+    - title: OCI DNS zone 
+      visible: true  
+      variables:
+      - domain_name
+      - onpremdomain_name
+      - fqdn
+      - onprem_ip
+
+    - title: Cluster-1 Add Ons 
+      visible: true  
+      variables:
+      - istio1
+      - igw1
+      - multus1
+      - sriov1
+      - dpdk1
+    
+    - title: Cluster 2 Configuration
+      visible:  
+           gt:
+            - ${Cluster-number}
+            - 1   
+      variables:
+      - ${ClusterName_2}
+      - ${cluster_type2}
+      - ${cni_type2}
+      - ${kubernetes_version_Cluster2}
+      - ${node_pool_quantity_Cluster2}
+      - ${region_2}
+        
+
+    - title: Nodepool details for Cluster2
+      visible:
+           and:
+             - eq:
+                 - ${node_pool_quantity_Cluster2}
+                 - 1
+             - gt:
+                 - ${Cluster-number}
+                 - 1
+      variables:
+      - ${Shape_2}
+      - ${node_pool_size_Cluster2}
+      - ${Flex_shape_memory_Cluster2}
+      - ${Flex_shape_ocpus_Cluster2}
+
+    - title: Cluster-2 Add Ons
+      visible: true  
+      variables:
+      - istio2
+      - igw2
+      - multus2
+      - sriov2
+      - dpdk2
+    
+    - title: Cluster 3 Configuration
+      visible:  
+           gt:
+            - ${Cluster-number}
+            - 2   
+      variables:  
+      - ${ClusterName_3}
+      - ${cluster_type3}
+      - ${cni_type3}
+      - ${kubernetes_version_Cluster3}
+      - ${node_pool_quantity_Cluster3}
+      - ${region_3}
+      
+    - title: Nodepool details for Cluster3
+      visible:
+           and:
+             - eq:
+                 - ${node_pool_quantity_Cluster3}
+                 - 1
+             - gt:
+                 - ${Cluster-number}
+                 - 2
+      variables:
+      - ${Shape_3_pool1}
+      - ${node_pool1_size_Cluster3}
+      - ${Flex_shape_memory_Cluster3_pool1}
+      - ${Flex_shape_ocpus_Cluster3_pool1}
+
+    - title: Cluster-3 Add Ons
+      visible: true  
+      variables:
+      - istio3
+      - igw3
+      - multus3
+      - sriov3
+      - dpdk3
+    
+   
+    variables:
+      
+      show_advanced:
+        type: boolean
+        title: "Show advanced options?"
+        description: "Shows advanced options."
+        visible: true
+        default: false
+      
+      compartment_ocid:
+        type: oci:identity:compartment:id
+        required: true
+        visible: true
+        title: Compartment
+        description: "Compartment where you want to create the solution resources"
+
+      availablity_domain_name:
+        type: string
+        required: true
+        visible: false
+        title: "Availability Domain to be chosen"
+        description: "Availability Domain to be chosen"
+
+      Cluster-number:
+        type: number
+        visible: true
+        required: true
+        minimum: 1
+        maximum: 3
+        default: 3
+        title: "Number of Clusters to be deployed"
+        description: "Choose number of clusters"
+
+      region_1:
+        type: enum
+        visible: true
+        required: true
+        title: "Regions"
+        additionalProps:
+          allowMultiple: true
+        description: "Choose Regions to deploy the cluster1"
+        default: "eu-stockholm-1"
+        enum:
+          - "eu-stockholm-1"
+          - "eu-frankfurt-1"
+      
+      region_2:
+        type: enum
+        visible: true
+        required: true
+        title: "Regions"
+        additionalProps:
+          allowMultiple: true
+        description: "Choose Regions to deploy the cluster2"
+        default: "eu-frankfurt-1"
+        enum:
+          - "eu-stockholm-1"
+          - "eu-frankfurt-1"
+          
+
+      region_3:
+        type: enum
+        visible: true
+        required: true
+        title: "Regions"
+        additionalProps:
+          allowMultiple: true
+        description: "Choose Regions to deploy the cluster3"
+        default: "eu-frankfurt-1"
+        enum:
+          - "eu-stockholm-1"
+          - "eu-frankfurt-1"
+
+      VCN-CIDR:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "VCN CIDR"
+        description: "Choose VCN CIDR for your OKE deployments."
+        default: "10.0.0.0/16"
+
+      K8SLBSubnet-CIDR:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "OKE LB Subnet CIDR"
+        description: "Choose OKE LoadBalancer Subnet CIDR."
+        default: "10.0.2.0/24"
+
+      K8SAPIEndPointSubnet-CIDR:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "OKE API EndPoint Subnet CIDR"
+        description: "Choose OKE API EndPoint Subnet CIDR."
+        default: "10.0.0.0/30"
+
+      K8SNodePoolSubnet-CIDR:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "OKE NodePool Subnet CIDR"
+        description: "Choose OKE NodePool Subnet CIDR."
+        default: "10.0.1.0/24"
+      
+      cluster_options_kubernetes_network_config_pods_cidr:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "OKE PODs CIDR"
+        description: "Choose OKE PODs CIDR."
+        default: "10.1.0.0/16"
+
+      cluster_options_kubernetes_network_config_services_cidr:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "OKE Services CIDR"
+        description: "Choose OKE Services CIDR."
+        default: "10.2.0.0/16"
+
+      cluster_kube_config_token_version:
+        type: enum
+        visible: true
+        required: false
+        title: "Cluster kubeconfig Version"
+        description: "Choose Kubeconfig Version."
+        default: "2.0.0"
+        enum:
+          - "2.0.0"
+
+      kubernetes_version_Cluster1_pool1:
+        type: oci:kubernetes:versions:id
+        visible: true
+        required: false
+        title: "Kubernetes Version for pool1"
+        description: "Choose Kubernetes Version for pool1"
+        default: "v1.26.2"
+        dependsOn:
+          compartmentId: ${compartment_ocid}
+          clusterOptionId: "all"
+
+      kubernetes_version_Cluster1_pool2:
+        type: oci:kubernetes:versions:id
+        visible: true
+        required: false
+        title: "Kubernetes Version for pool2"
+        description: "Choose Kubernetes Version for pool2"
+        default: "v1.27.2"
+        dependsOn:
+          compartmentId: ${compartment_ocid}
+          clusterOptionId: "all"
+
+      kubernetes_version_Cluster1:
+        type: oci:kubernetes:versions:id
+        visible: false
+        required: false
+        title: "Kubernetes Version"
+        description: "Choose Kubernetes Version."
+        default: "v1.27.2"
+        dependsOn:
+          compartmentId: ${compartment_ocid}
+          clusterOptionId: "all"
+
+      kubernetes_version_Cluster2:
+        type: oci:kubernetes:versions:id
+        visible: true
+        required: false
+        title: "Kubernetes Version"
+        description: "Choose Kubernetes Version."
+        default: "v1.26.2"
+        dependsOn:
+          compartmentId: ${compartment_ocid}
+          clusterOptionId: "all"
+       
+
+      kubernetes_version_Cluster3:
+        type: oci:kubernetes:versions:id
+        visible: true
+        required: false
+        title: "Kubernetes Version"
+        description: "Choose Kubernetes Version."
+        default: "v1.26.2"
+        dependsOn:
+          compartmentId: ${compartment_ocid}
+          clusterOptionId: "all"
+
+      ClusterName_1:
+        type: string
+        visible: true
+        required: false
+        title: "OKE Cluster-1 Name"
+        description: "Choose OKE Cluster Name."
+        default: "5GCore_Sweden"
+
+      ClusterName_2:
+        type: string
+        visible: true
+        required: false
+        title: "OKE Cluster-2 Name"
+        description: "Choose OKE Cluster Name."
+        default: "NORC_Frankfurt"
+
+      ClusterName_3:
+        type: string
+        visible: true
+        required: false
+        title: "OKE Cluster-3 Name"
+        description: "Choose OKE Cluster Name."
+        default: "NCOM_Frankfurt"
+
+      cluster_type1:
+        type: enum
+        visible: true
+        required: false
+        title: "OKE Cluster-1 Type"
+        description: "Choose OKE Cluster Type"
+        enum:
+          - "BASIC_CLUSTER"
+          - "ENHANCED_CLUSTER"
+        default: "BASIC_CLUSTER"
+
+      cluster_type2:
+        type: enum
+        visible: true
+        required: false
+        title: "OKE Cluster-2 Type"
+        description: "Choose OKE Cluster Type"
+        enum:
+          - "BASIC_CLUSTER"
+          - "ENHANCED_CLUSTER"
+        default: "BASIC_CLUSTER"
+
+      cluster_type3:
+        type: enum
+        visible: true
+        required: false
+        title: "OKE Cluster-3 Type"
+        description: "Choose OKE Cluster Type"
+        enum:
+          - "BASIC_CLUSTER"
+          - "ENHANCED_CLUSTER"
+        default: "BASIC_CLUSTER"
+
+      cni_type1:
+        title: "CNI Plugin"
+        description: "Allows the selection of the OKE cluster's default CNI"
+        type: enum
+        # enumerated values
+        enum:
+        - FLANNEL_OVERLAY
+        - OCI_VCN_IP_NATIVE
+        - CALICO
+        default: "FLANNEL_OVERLAY"
+        required: false
+        visible: true
+
+      cni_type2:
+        title: "CNI Plugin"
+        description: "Allows the selection of the OKE cluster's default CNI"
+        type: enum
+        # enumerated values
+        enum:
+        - FLANNEL_OVERLAY
+        - OCI_VCN_IP_NATIVE
+        - CALICO
+        default: "FLANNEL_OVERLAY"
+        required: false
+        visible: true
+
+      cni_type3:
+        title: "CNI Plugin"
+        description: "Allows the selection of the OKE cluster's default CNI"
+        type: enum
+        # enumerated values
+        enum:
+        - FLANNEL_OVERLAY
+        - OCI_VCN_IP_NATIVE
+        - CALICO
+        default: "FLANNEL_OVERLAY"
+        required: false
+        visible: true
+
+      node_pool1_size_Cluster1:
+        type: number
+        required: false
+        minimum: 2
+        maximum: 32768
+        multipleOf: 1
+        default: 2
+        title: "OKE NodePool-1 size for Cluster-1"
+        description: "Choose size of the OKE NodePool-1 for Cluster-1."
+
+      node_pool2_size_Cluster1:
+        type: number
+        required: false
+        minimum: 2
+        maximum: 32768
+        multipleOf: 1
+        default: 2
+        title: "OKE NodePool-2 size for Cluster-1"
+        description: "Choose size of the OKE NodePool-2 for Cluster-1."
+
+      node_pool_size_Cluster2:
+        type: number
+        required: false
+        minimum: 2
+        maximum: 32768
+        multipleOf: 1
+        default: 2
+        title: "OKE NodePool size for Cluster-2"
+        description: "Choose size of the OKE NodePool for Cluster-2."
+
+      node_pool1_size_Cluster3:
+        type: number
+        required: false
+        minimum: 2
+        maximum: 32768
+        multipleOf: 1
+        default: 2
+        title: "OKE NodePool size for Cluster-3"
+        description: "Choose size of the OKE NodePool for Cluster-3."
+
+
+      node_pool_quantity_Cluster1:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 3
+        multipleOf: 1
+        default: 2
+        title: "OKE NodePool quantity for Cluster-1"
+        description: "Choose number of OKE NodePool for Cluster-1."
+
+      node_pool_quantity_Cluster2:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 1
+        multipleOf: 1
+        default: 1
+        title: "OKE NodePool quantity for Cluster-2"
+        description: "Choose number of OKE NodePool for Cluster-2."
+
+      node_pool_quantity_Cluster3:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 2
+        multipleOf: 1
+        default: 1
+        title: "OKE NodePool quantity for Cluster-3"
+        description: "Choose number of OKE NodePool for Cluster-3."
+
+      Shape_1_pool1:
+        type: oci:core:instanceshape:name
+        required: false
+        title: "Shape for OKE NodePool-1 of Cluster1"
+        description: "Choose shape for compute instances in OKE NodePool-1."
+        default: "VM.Standard3.Flex"
+        dependsOn:
+          compartmentId: ${compartment_ocid}   
+
+
+      Shape_1_pool2:
+        type: oci:core:instanceshape:name
+        required: false
+        title: "Shape for OKE NodePool-2 of Cluster1"
+        description: "Choose shape for compute instances in OKE NodePool-2."
+        default: "VM.Standard3.Flex"
+        dependsOn:
+          compartmentId: ${compartment_ocid}    
+      
+      Shape_2:
+        type: oci:core:instanceshape:name
+        required: false
+        title: "Shape for OKE NodePool of Cluster2"
+        description: "Choose shape for compute instances in OKE NodePool."
+        default: "VM.Standard3.Flex"
+        dependsOn:
+          compartmentId: ${compartment_ocid}
+
+      Shape_3_pool1:
+        type: oci:core:instanceshape:name
+        required: false
+        title: "Shape for OKE NodePool of Cluster3"
+        description: "Choose shape for compute instances in OKE NodePool."
+        default: "VM.Standard3.Flex"
+        dependsOn:
+          compartmentId: ${compartment_ocid}
+
+      Flex_shape_ocpus_Cluster1_pool1:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 1
+        title: "Flex Shape OCPUs for pool1"
+        description: "Choose number of OCPUs for Flex Shape."
+        visible:
+          and:
+            - or:
+              - eq:
+                - Shape_1_pool1 
+                - "VM.Standard.E3.Flex"
+              - eq:
+                - Shape_1_pool1 
+                - "VM.Standard.E4.Flex"
+              - eq:
+                - Shape_1_pool1
+                - "VM.Standard3.Flex"
+              - eq:
+                - Shape_1_pool1
+                - "VM.Standard.A1.Flex"
+
+      Flex_shape_ocpus_Cluster1_pool2:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 1
+        title: "Flex Shape OCPUs for pool2"
+        description: "Choose number of OCPUs for Flex Shape."
+        visible:
+          and:
+            - or:
+              - eq:
+                - Shape_1_pool2 
+                - "VM.Standard.E3.Flex"
+              - eq:
+                - Shape_1_pool2 
+                - "VM.Standard.E4.Flex"
+              - eq:
+                - Shape_1_pool2
+                - "VM.Standard3.Flex"
+              - eq:
+                - Shape_1_pool2
+                - "VM.Standard.A1.Flex"
+
+      Flex_shape_memory_Cluster1_pool1:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 4
+        title: "Flex Shape Memory (GB) for pool1"
+        description: "Choose number GB for Flex Shape Memory."
+        visible:
+          and:
+            - or:
+              - eq:
+                - Shape_1_pool1 
+                - "VM.Standard.E3.Flex"
+              - eq:
+                - Shape_1_pool1
+                - "VM.Standard.E4.Flex"
+              - eq:
+                - Shape_1_pool1
+                - "VM.Standard3.Flex"  
+              - eq:
+                - Shape_1_pool1
+                - "VM.Standard.A1.Flex"
+      
+      Flex_shape_memory_Cluster1_pool2:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 4
+        title: "Flex Shape Memory (GB) for pool2"
+        description: "Choose number GB for Flex Shape Memory."
+        visible:
+          and:
+            - or:
+              - eq:
+                - Shape_1_pool2 
+                - "VM.Standard.E3.Flex"
+              - eq:
+                - Shape_1_pool2 
+                - "VM.Standard.E4.Flex"
+              - eq:
+                - Shape_1_pool2 
+                - "VM.Standard3.Flex"  
+              - eq:
+                - Shape_1_pool2 
+                - "VM.Standard.A1.Flex"
+      
+        
+      Flex_shape_ocpus_Cluster2:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 1
+        title: "Flex Shape OCPUs"
+        description: "Choose number of OCPUs for Flex Shape."
+        visible:
+          and:
+            - or:
+              - eq:
+                - Shape_2 
+                - "VM.Standard.E3.Flex"
+              - eq:
+                - Shape_2 
+                - "VM.Standard.E4.Flex"
+              - eq:
+                - Shape_2
+                - "VM.Standard3.Flex"
+              - eq:
+                - Shape_2
+                - "VM.Standard.A1.Flex"
+      
+      Flex_shape_memory_Cluster2:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 4
+        title: "Flex Shape Memory (GB)"
+        description: "Choose number GB for Flex Shape Memory."
+        visible:
+          and:
+            - or:
+              - eq:
+                - Shape_2 
+                - "VM.Standard.E3.Flex"
+              - eq:
+                - Shape_2
+                - "VM.Standard.E4.Flex"
+              - eq:
+                - Shape_2
+                - "VM.Standard3.Flex"  
+              - eq:
+                - Shape_2
+                - "VM.Standard.A1.Flex"
+    
+      Flex_shape_ocpus_Cluster3_pool1:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 1
+        title: "Flex Shape OCPUs for pool"
+        description: "Choose number of OCPUs for Flex Shape."
+        visible:
+          and:
+            - or:
+              - eq:
+                - Shape_3_pool1 
+                - "VM.Standard.E3.Flex"
+              - eq:
+                - Shape_3_pool1 
+                - "VM.Standard.E4.Flex"
+              - eq:
+                - Shape_3_pool1
+                - "VM.Standard3.Flex"
+              - eq:
+                - Shape_3_pool1
+                - "VM.Standard.A1.Flex"
+
+
+      Flex_shape_memory_Cluster3_pool1:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 4
+        title: "Flex Shape Memory (GB) for pool"
+        description: "Choose number GB for Flex Shape Memory."
+        visible:
+          and:
+            - or:
+              - eq:
+                - Shape_3_pool1 
+                - "VM.Standard.E3.Flex"
+              - eq:
+                - Shape_3_pool1
+                - "VM.Standard.E4.Flex"
+              - eq:
+                - Shape_3_pool1
+                - "VM.Standard3.Flex"  
+              - eq:
+                - Shape_3_pool1
+                - "VM.Standard.A1.Flex"
+
+      igw1:
+        type: boolean
+        required: false
+        visible: true
+        title: "Internet Gateway"
+        default: "false"
+
+      multus1:
+        type: boolean
+        required: false
+        visible: true
+        title: "Enable Multus"
+        default: "false"
+
+      sriov1:
+        type: boolean
+        required: false
+        visible: true
+        title: "Enable SRIOV"
+        default: "false"
+
+      dpdk1:
+        type: boolean
+        required: false
+        visible: true
+        title: "Enable DPDK"
+        default: "false"
+
+      #Cluster 2
+
+      igw2:
+        type: boolean
+        required: false
+        visible: true
+        title: "Internet Gateway"
+        default: "false"
+
+      multus2:
+        type: boolean
+        required: false
+        visible: true
+        title: "Enable Multus"
+        default: "false"
+
+      sriov2:
+        type: boolean
+        required: false
+        visible: true
+        title: "Enable SRIOV"
+        default: "false"
+
+      dpdk2:
+        type: boolean
+        required: false
+        visible: true
+        title: "Enable DPDK"
+        default: "false"
+
+      #cluster3
+
+      igw3:
+        type: boolean
+        required: false
+        visible: true
+        title: "Internet Gateway"
+        default: "false"
+
+      multus3:
+        type: boolean
+        required: false
+        visible: true
+        title: "Enable Multus"
+        default: "false"
+
+      sriov3:
+        type: boolean
+        required: false
+        visible: true
+        title: "Enable SRIOV"
+        default: "false"
+
+      dpdk3:
+        type: boolean
+        required: false
+        visible: true
+        title: "Enable DPDK"
+        default: "false"
+
+      istio1:
+        type: boolean
+        required: false
+        visible: true
+        title: "ISTIO"
+        default: "false"
+
+      istio2:
+        type: boolean
+        required: false
+        visible: true
+        title: "ISTIO"
+        default: "false"
+
+      istio3:
+        type: boolean
+        required: false
+        visible: true
+        title: "ISTIO"
+        default: "false"
+
+      #DNS
+
+      domain_name:
+        type: string
+        required: false
+        visible: true
+        title: "Name of Zone"
+        description: "Records will appear as {nf}.cluster1.3gpp.net.For eg: pcf.cluster1.3gpp.net"
+        default: "cluster1.3gpp.net"
+
+      onpremdomain_name:
+        type: string
+        required: false
+        visible: true
+        title: "Name of On-Prem Zone"
+        default: "telenorlabs.com"
+
+      fqdn:
+        type: string
+        required: false
+        visible: true
+        title: "Target FQDN within Zone"
+        default: "<nf>.telenorlabs.com"
+        description: "Records will appear as {nf}.telenorlabs.com.For eg: pcf.telenorlabs.com"
+
+      onprem_ip:
+        type: string
+        required: false
+        visible: true
+        title: "IP of On Prem DNS"
+        default: ""
+
+      
+
+      
+
+     
+
+
+      
